@@ -2,7 +2,8 @@ let scene, camera, renderer;
 let geometry, material, wireframe, terrain, light, edges, line, lines, lineMaterial;
 let size = window.innerWidth > window.innerHeight ? window.innerWidth : window.innerHeight;;
 let t = 0;
-let noise_x, noise_z = 1000;
+let noise_x = 1000;
+let	noise_z = 1000;
 let noise_y = 100;
 let perlin = new Perlin();
 let origin = new THREE.Vector3(0,0, 0);
@@ -55,8 +56,8 @@ function init() {
 		this.vertical_view = 0;
 		this.horizontal_view = 0;
 		this.noise_x = 1000;
-		this.noise_y = 1000;
-		this.noise_z = 100;
+		this.noise_y = 100;
+		this.noise_z = 1000;
 
 		this.rotateViwingAngle = function () {
 			let x = size * Math.cos((controls.vertical_view * Math.PI) / 180) * Math.sin((controls.horizontal_view * Math.PI) / 180);
@@ -66,25 +67,27 @@ function init() {
 			camera.lookAt(origin);
 		};
 
-		// this.scaleX = function () {
-		// 	noise_x = this.noise_x;
-		// };
-		//
-		// this.scaleY = function () {
-		// 	noise_y = this.noise_y;
-		// };
-		//
-		// this.scaleZ = function () {
-		// 	noise_z = this.noise_z;
-		// };
+		this.update = function () {
+			if (noise_x) {
+				noise_x = controls.noise_x;
+			}
+			if (noise_y) {
+				noise_y = controls.noise_y;
+			}
+			if (noise_z) {
+				noise_z = controls.noise_z;
+			}
+			updateVertices(line, noise_x, noise_y, noise_z);
+			camera.updateProjectionMatrix();
+		};
 	};
 
 	let gui = new dat.GUI();
 	gui.add(controls, 'horizontal_view', 0, 360).onChange(controls.rotateViwingAngle);
 	gui.add(controls, 'vertical_view', 0, 180).onChange(controls.rotateViwingAngle);
-	// gui.add(controls, 'noise_x', 300, 1000).onChange(controls.scaleX);
-	// gui.add(controls, 'noise_y', 300, 1000).onChange(controls.scaleY);
-	// gui.add(controls, 'noise_z', 100, 500).onChange(controls.scaleZ);
+	gui.add(controls, 'noise_x', 500, 1000).onChange(controls.update);
+	gui.add(controls, 'noise_y', 100, 500).onChange(controls.update);
+	gui.add(controls, 'noise_z', 500, 1000).onChange(controls.update);
 
 
 	render();
@@ -110,7 +113,7 @@ function updateVertices(geom, x, y, z) {
 function render() {
 	t += 0.0025;
 	requestAnimationFrame(render);
-	updateVertices(line, 500, 300, 800);
+	updateVertices(line, noise_x, noise_y, noise_z);
 	renderer.render(scene, camera);
 }
 
