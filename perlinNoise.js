@@ -1,7 +1,8 @@
 let scene, camera, renderer;
 let geometry, material, wireframe, terrain, light, edges, line, lines, lineMaterial;
-let size = window.innerWidth > window.innerHeight ? window.innerWidth : window.innerHeight;;
+let size = window.innerWidth > window.innerHeight ? window.innerWidth : window.innerHeight;
 let t = 0;
+let speed = 0.0025;
 let noise_x = 1000;
 let	noise_z = 1000;
 let noise_y = 100;
@@ -58,6 +59,7 @@ function init() {
 		this.noise_x = 1000;
 		this.noise_y = 100;
 		this.noise_z = 1000;
+		this.speed = 0.0025;
 
 		this.rotateViwingAngle = function () {
 			let x = size * Math.cos((controls.vertical_view * Math.PI) / 180) * Math.sin((controls.horizontal_view * Math.PI) / 180);
@@ -77,6 +79,9 @@ function init() {
 			if (noise_z) {
 				noise_z = controls.noise_z;
 			}
+			if (speed) {
+				speed = controls.speed;
+			}
 			updateVertices(line, noise_x, noise_y, noise_z);
 			camera.updateProjectionMatrix();
 		};
@@ -88,6 +93,7 @@ function init() {
 	gui.add(controls, 'noise_x', 500, 1000).onChange(controls.update);
 	gui.add(controls, 'noise_y', 100, 500).onChange(controls.update);
 	gui.add(controls, 'noise_z', 500, 1000).onChange(controls.update);
+	gui.add(controls, 'speed', 0.0025, 0.1).onChange(controls.update);
 
 
 	render();
@@ -111,7 +117,7 @@ function updateVertices(geom, x, y, z) {
 }
 
 function render() {
-	t += 0.0025;
+	t += speed;
 	requestAnimationFrame(render);
 	updateVertices(line, noise_x, noise_y, noise_z);
 	renderer.render(scene, camera);
