@@ -140,22 +140,25 @@ function init() {
 	};
 
 	let gui = new dat.GUI({width:300});
-	gui.add(datControls, 'onSwitchCamera').name("Switch Camera");
-	gui.add(datControls, 'cameraType').name("Camera type").listen();
-	gui.add(datControls, 'horizontal_view', 0, 360).name("Horizontal view").onChange(datControls.rotateViwingAngle);
-	gui.add(datControls, 'vertical_view', 0, 180).name("Vertical view").onChange(datControls.rotateViwingAngle);
-	gui.add(datControls, 'camDistance', 200, 3000).name("Camera Distance").onChange(datControls.cameraZooming);
+	let folder1 = gui.addFolder('Camera controls');
+	let folder2 = gui.addFolder('Plane Controls');
+
+	folder1.add(datControls, 'onSwitchCamera').name("Switch Camera");
+	folder1.add(datControls, 'cameraType').name("Camera type").listen();
+	folder1.add(datControls, 'horizontal_view', 0, 360).name("Horizontal view").onChange(datControls.rotateViwingAngle);
+	folder1.add(datControls, 'vertical_view', 0, 180).name("Vertical view").onChange(datControls.rotateViwingAngle);
+	folder1.add(datControls, 'camDistance', 200, 3000).name("Camera Distance").onChange(datControls.cameraZooming);
 
 	gui.add(datControls, 'animationOn').name("Animation Switch");
 
-	gui.add(datControls, 'length', 500, 2800).name("Plane width").onChange(datControls.onSegmentChange);
-	gui.add(datControls, 'breadth', 500, 2800).name("Plane breadth").onChange(datControls.onSegmentChange);
-	gui.add(datControls, 'widthSeg', 10, 250).name("X Segment").onChange(datControls.onSegmentChange);
-	gui.add(datControls, 'heightSeg', 10, 250).name("Z Segment").onChange(datControls.onSegmentChange);
-	gui.add(datControls, 'noise_x', 500, 1000).onChange(datControls.update);
-	gui.add(datControls, 'noise_y', 100, 500).onChange(datControls.update);
-	gui.add(datControls, 'noise_z', 500, 1000).onChange(datControls.update);
-	gui.add(datControls, 'speed', 0.0025, 0.1).onChange(datControls.update);
+	folder2.add(datControls, 'length', 500, 2800).name("Plane width").onChange(datControls.onSegmentChange);
+	folder2.add(datControls, 'breadth', 500, 2800).name("Plane breadth").onChange(datControls.onSegmentChange);
+	folder2.add(datControls, 'widthSeg', 10, 250).name("X Segment").onChange(datControls.onSegmentChange);
+	folder2.add(datControls, 'heightSeg', 10, 250).name("Z Segment").onChange(datControls.onSegmentChange);
+	folder2.add(datControls, 'noise_x', 500, 1000).onChange(datControls.update);
+	folder2.add(datControls, 'noise_y', 100, 500).onChange(datControls.update);
+	folder2.add(datControls, 'noise_z', 500, 1000).onChange(datControls.update);
+	folder2.add(datControls, 'speed', 0.0025, 0.1).onChange(datControls.update);
 
 
 	render();
