@@ -1,13 +1,18 @@
 let scene, camera, renderer;
 let geometry, material, wireframe, terrain, light, edges, line, lines, lineMaterial;
-let size = window.innerWidth > window.innerHeight ? window.innerWidth : window.innerHeight;
+let length = 1200;
+let breadth = 1200;
+let camDistance = 1500;
 let t = 0;
+let animationOn = true;
 let speed = 0.0025;
 let noise_x = 1000;
 let	noise_z = 1000;
 let noise_y = 100;
+let widthSeg = 100;
+let heightSeg = 100;
 let perlin = new Perlin();
-let origin = new THREE.Vector3(0,0, 0);
+const origin = new THREE.Vector3(0,0, 0);
 function init() {
 	// Check if WebGL is available see Three/examples
 	// No need for webgl2 here - change as appropriate
@@ -41,59 +46,116 @@ function init() {
 	// calculate aspectRatio
 	let aspectRatio = window.innerWidth / window.innerHeight;
 	// camera
-	camera = new THREE.PerspectiveCamera(50, aspectRatio, 2, 10000);
-	camera.position.z = size;
+	camera = new THREE.PerspectiveCamera(50, aspectRatio, 0.1, 10000);
+	camera.position.z = camDistance;
 	camera.lookAt(origin);
 
 	// create geometry
-	geometry  = new THREE.PlaneBufferGeometry(size, size, 100, 100);
-	wireframe = new THREE.WireframeGeometry(geometry);
-	lineMaterial = new THREE.LineBasicMaterial({color:0x333333});
-	line = new THREE.LineSegments(wireframe, lineMaterial);
-	line.rotation.x = THREE.Math.degToRad(-90);
+	let line = initWireFrame(length, breadth, widthSeg, heightSeg);
 	scene.add(line);
 
-	let controls = new function() {
+	controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+	let datControls = new function() {
+		// camera options
+		this.cameraType = "Perspective";
 		this.vertical_view = 0;
 		this.horizontal_view = 0;
+		this.camDistance = 1500;
+		// mesh options
+		this.length = 1200;
+		this.breadth = 1200;
+		this.widthSeg = 100;
+		this.heightSeg = 100;
 		this.noise_x = 1000;
 		this.noise_y = 100;
 		this.noise_z = 1000;
 		this.speed = 0.0025;
 
+		this.onSwitchCamera = function () {
+			let camPos = camera.position.copy(camera.position);
+			if (camera instanceof THREE.PerspectiveCamera) {
+				camera = new THREE.OrthographicCamera(-window.innerWidth / 2.0, window.innerWidth / 2.0,
+					window.innerHeight / 2.0, -window.innerHeight / 2.0, 0.1, 10000);
+				camera.position.set(camPos.x, camPos.y, camPos.z);
+				camera.lookAt(origin);
+				this.cameraType = 'Orthographic';
+			} else {
+				camera = new THREE.PerspectiveCamera(50, aspectRatio, 0.1, 10000);
+				camera.position.set(camPos.x, camPos.y, camPos.z);
+				camera.lookAt(origin);
+				this.cameraType = 'Perspective';
+			}
+			camera.updateProjectionMatrix();
+		};
+
+		this.cameraZooming = function () {
+			if (camDistance) {
+				camDistance = datControls.camDistance;
+				datControls.rotateViwingAngle();
+			}
+		};
+
 		this.rotateViwingAngle = function () {
-			let x = size * Math.cos((controls.vertical_view * Math.PI) / 180) * Math.sin((controls.horizontal_view * Math.PI) / 180);
-			let y = size * Math.sin((controls.vertical_view * Math.PI) / 180);
-			let z = size * Math.cos((controls.vertical_view * Math.PI) / 180) * Math.cos((controls.horizontal_view * Math.PI) / 180);
+			let x = camDistance * Math.cos((datControls.vertical_view * Math.PI) / 180) * Math.sin((datControls.horizontal_view * Math.PI) / 180);
+			let y = camDistance * Math.sin((datControls.vertical_view * Math.PI) / 180);
+			let z = camDistance * Math.cos((datControls.vertical_view * Math.PI) / 180) * Math.cos((datControls.horizontal_view * Math.PI) / 180);
 			camera.position.set(x, y, z);
 			camera.lookAt(origin);
 		};
 
+		this.onSegmentChange = function () {
+			scene.remove(line);
+			line = initWireFrame(datControls.length, datControls.breadth, datControls.widthSeg, datControls.heightSeg);
+			scene.add(line);
+			updateVertices(line, noise_x, noise_y, noise_z);
+			camera.updateProjectionMatrix();
+		};
+
 		this.update = function () {
 			if (noise_x) {
-				noise_x = controls.noise_x;
+				noise_x = datControls.noise_x;
 			}
 			if (noise_y) {
-				noise_y = controls.noise_y;
+				noise_y = datControls.noise_y;
 			}
 			if (noise_z) {
-				noise_z = controls.noise_z;
+				noise_z = datControls.noise_z;
 			}
 			if (speed) {
-				speed = controls.speed;
+				speed = datControls.speed;
 			}
 			updateVertices(line, noise_x, noise_y, noise_z);
 			camera.updateProjectionMatrix();
 		};
+
+		this.animationOn = function () {
+			if (animationOn) {
+				animationOn = false;
+			} else {
+				animationOn = true;
+			}
+		};
+
 	};
 
-	let gui = new dat.GUI();
-	gui.add(controls, 'horizontal_view', 0, 360).onChange(controls.rotateViwingAngle);
-	gui.add(controls, 'vertical_view', 0, 180).onChange(controls.rotateViwingAngle);
-	gui.add(controls, 'noise_x', 500, 1000).onChange(controls.update);
-	gui.add(controls, 'noise_y', 100, 500).onChange(controls.update);
-	gui.add(controls, 'noise_z', 500, 1000).onChange(controls.update);
-	gui.add(controls, 'speed', 0.0025, 0.1).onChange(controls.update);
+	let gui = new dat.GUI({width:300});
+	gui.add(datControls, 'onSwitchCamera').name("Switch Camera");
+	gui.add(datControls, 'cameraType').name("Camera type").listen();
+	gui.add(datControls, 'horizontal_view', 0, 360).name("Horizontal view").onChange(datControls.rotateViwingAngle);
+	gui.add(datControls, 'vertical_view', 0, 180).name("Vertical view").onChange(datControls.rotateViwingAngle);
+	gui.add(datControls, 'camDistance', 200, 3000).name("Camera Distance").onChange(datControls.cameraZooming);
+
+	gui.add(datControls, 'animationOn').name("Animation Switch");
+
+	gui.add(datControls, 'length', 500, 2800).name("Plane width").onChange(datControls.onSegmentChange);
+	gui.add(datControls, 'breadth', 500, 2800).name("Plane breadth").onChange(datControls.onSegmentChange);
+	gui.add(datControls, 'widthSeg', 10, 250).name("X Segment").onChange(datControls.onSegmentChange);
+	gui.add(datControls, 'heightSeg', 10, 250).name("Z Segment").onChange(datControls.onSegmentChange);
+	gui.add(datControls, 'noise_x', 500, 1000).onChange(datControls.update);
+	gui.add(datControls, 'noise_y', 100, 500).onChange(datControls.update);
+	gui.add(datControls, 'noise_z', 500, 1000).onChange(datControls.update);
+	gui.add(datControls, 'speed', 0.0025, 0.1).onChange(datControls.update);
 
 
 	render();
@@ -117,7 +179,9 @@ function updateVertices(geom, x, y, z) {
 }
 
 function render() {
-	t += speed;
+	if (animationOn) {
+		t += speed;
+	}
 	requestAnimationFrame(render);
 	updateVertices(line, noise_x, noise_y, noise_z);
 	renderer.render(scene, camera);
@@ -125,6 +189,15 @@ function render() {
 
 function main() {
 	init()
+}
+
+function initWireFrame(width, height, widthSeg, heightSeg) {
+	geometry = new THREE.PlaneBufferGeometry(width, height, widthSeg, heightSeg);
+	wireframe = new THREE.WireframeGeometry(geometry);
+	lineMaterial = new THREE.LineBasicMaterial({color:0x333333});
+	line = new THREE.LineSegments(wireframe, lineMaterial);
+	line.rotation.x = THREE.Math.degToRad(-90);
+	return line
 }
 
 window.onload = main;
