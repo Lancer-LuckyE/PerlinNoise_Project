@@ -1,5 +1,5 @@
 let scene, camera, renderer;
-let geometry, meshMaterial, plane;
+let geometry, meshMaterial, plane, controls;
 let length = 1200;
 let breadth = 1200;
 let camDistance = 1500;
@@ -82,6 +82,36 @@ function init() {
 		this.noise_y = 100;
 		this.noise_z = 1000;
 		this.speed = 0.0025;
+		// lighting
+		this.rotationSpeed = 0.02;
+		this.opacity = meshMaterial.opacity;
+		this.transparent = meshMaterial.transparent;
+		this.visible = meshMaterial.visible;//turn on/turn off
+		this.ambient = '#9999ff';//ambient light
+		this.emissive = '#111111';//emissive light
+		this.specular = '#ffffff';//specular light
+		this.diffuse = '#9999ff';//diffuse light
+		//How shiny the .specular highlight is; a higher value gives a sharper highlight. Default is 30.
+		//Looks more like ocean and waves in the sun
+		//https://threejs.org/docs/#api/en/materials/MeshPhongMaterial
+		this.shininess = meshMaterial.shininess;
+
+		this.color = '#ffffff';
+
+		this.pointLight = true;
+
+		this.updateMaterial = function () {
+			meshMaterial.opacity = this.opacity;
+			meshMaterial.transparent = this.transparent;
+			meshMaterial.visible = this.visible;
+			meshMaterial.ambient = new THREE.Color(this.ambient);
+			meshMaterial.diffuse = new THREE.Color(this.diffuse);
+			meshMaterial.emissive = new THREE.Color(this.emissive);
+			meshMaterial.specular = new THREE.Color(this.specular);
+			meshMaterial.shininess = this.shininess;
+			meshMaterial.color = new THREE.Color(this.color);
+			meshMaterial.needsUpdate = true;
+		}
 
 		this.onSwitchCamera = function () {
 			let camPos = camera.position.copy(camera.position);
@@ -97,6 +127,7 @@ function init() {
 				camera.lookAt(origin);
 				this.cameraType = 'Perspective';
 			}
+			controls = new THREE.OrbitControls(camera, renderer.domElement);
 			camera.updateProjectionMatrix();
 		};
 
@@ -118,6 +149,7 @@ function init() {
 		this.onSegmentChange = function () {
 			scene.remove(plane);
 			plane = initPlaneModel(datControls.length, datControls.breadth, datControls.widthSeg, datControls.heightSeg, texture, texturenormal);
+			datControls.updateMaterial();
 			scene.add(plane);
 			updateVertices(plane, noise_x, noise_y, noise_z);
 			camera.updateProjectionMatrix();
@@ -153,6 +185,7 @@ function init() {
 	let gui = new dat.GUI({width:300});
 	let folder1 = gui.addFolder('Camera controls');
 	let folder2 = gui.addFolder('Plane Controls');
+	let folder3 = gui.addFolder('Lighting');
 
 	folder1.add(datControls, 'onSwitchCamera').name("Switch Camera");
 	folder1.add(datControls, 'cameraType').name("Camera type").listen();
@@ -179,84 +212,46 @@ function init() {
 	pointLight.position.set(50, 200, 20);
 	scene.add(pointLight);
 
-
-	/** Used to save those variables that need to be modified */
-	let guiParams = new function () {
-		this.rotationSpeed = 0.02;
-		this.opacity = meshMaterial.opacity;
-		this.transparent = meshMaterial.transparent;
-		this.visible = meshMaterial.visible;//turn on/turn off
-		this.ambient = '#9999ff';//ambient light
-		this.emissive = '#111111';//emissive light
-		this.specular = '#ffffff';//specular light
-		this.diffuse = '#9999ff';//diffuse light
-		//How shiny the .specular highlight is; a higher value gives a sharper highlight. Default is 30.
-		//Looks more like ocean and waves in the sun
-		//https://threejs.org/docs/#api/en/materials/MeshPhongMaterial
-		this.shininess = meshMaterial.shininess;
-
-		this.color = '#ffffff';
-
-		this.pointLight = true;
-
-		this.updateMaterial = function () {
-			meshMaterial.opacity = this.opacity;
-			meshMaterial.transparent = this.transparent;
-			meshMaterial.visible = this.visible;
-			meshMaterial.ambient = new THREE.Color(this.ambient);
-			meshMaterial.diffuse = new THREE.Color(this.diffuse);
-			meshMaterial.emissive = new THREE.Color(this.emissive);
-			meshMaterial.specular = new THREE.Color(this.specular);
-			meshMaterial.shininess = this.shininess;
-			meshMaterial.color = new THREE.Color(this.color);
-
-			meshMaterial.needsUpdate = true;
-		}
-	};
 	/** Define dat.GUI object and bind several properties of guiParams */
 
-	var folder = gui.addFolder('Lighting');
-	folder.open();
-	folder.add(guiParams, 'opacity', 0.1, 1.0).onChange(function (e) {
-		guiParams.updateMaterial();
+	folder3.add(datControls, 'opacity', 0.1, 1.0).onChange(function (e) {
+		datControls.updateMaterial();
 	});
-	folder.add(guiParams, 'transparent').onChange(function (e) {
-		guiParams.updateMaterial();
+	folder3.add(datControls, 'transparent').onChange(function (e) {
+		datControls.updateMaterial();
 	});
-	folder.addColor(guiParams, 'ambient').onChange(function (e) {
-		guiParams.updateMaterial();
+	folder3.addColor(datControls, 'ambient').onChange(function (e) {
+		datControls.updateMaterial();
 	});
-	folder.addColor(guiParams, 'diffuse').onChange(function (e) {
-		guiParams.updateMaterial();
+	folder3.addColor(datControls, 'diffuse').onChange(function (e) {
+		datControls.updateMaterial();
 	});
-	folder.addColor(guiParams, 'emissive').onChange(function (e) {
-		guiParams.updateMaterial();
+	folder3.addColor(datControls, 'emissive').onChange(function (e) {
+		datControls.updateMaterial();
 	});
-	folder.addColor(guiParams, 'specular').onChange(function (e) {
-		guiParams.updateMaterial();
+	folder3.addColor(datControls, 'specular').onChange(function (e) {
+		datControls.updateMaterial();
 	});
 	//The larger the number, the more shiny
-	folder.add(guiParams, 'shininess', 1, 200).onChange(function (e) {
-		guiParams.updateMaterial();
+	folder3.add(datControls, 'shininess', 1, 200).onChange(function (e) {
+		datControls.updateMaterial();
 	});
-	folder.add(guiParams, 'visible').onChange(function (e) {
-		guiParams.updateMaterial();
-	});
-
-	folder.addColor(guiParams, 'color').onChange(function (e) {
-		guiParams.updateMaterial();
+	folder3.add(datControls, 'visible').onChange(function (e) {
+		datControls.updateMaterial();
 	});
 
-	gui.add(guiParams, 'pointLight').onChange(function (e) {
+	folder3.addColor(datControls, 'color').onChange(function (e) {
+		datControls.updateMaterial();
+	});
+
+	gui.add(datControls, 'pointLight').onChange(function (e) {
 		scene.remove(pointLight);
-
 		if (e) {
 			scene.add(pointLight);
-
 		}
 	});
 
-	guiParams.updateMaterial();
+	datControls.updateMaterial();
 
 
 	render();
