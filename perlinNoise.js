@@ -215,7 +215,7 @@ function init() {
 	};
 	/** Define dat.GUI object and bind several properties of guiParams */
 
-	var folder = gui.addFolder('Mesh');
+	var folder = gui.addFolder('Lighting');
 	folder.open();
 	folder.add(guiParams, 'opacity', 0.1, 1.0).onChange(function (e) {
 		guiParams.updateMaterial();
